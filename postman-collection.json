@@ -1,0 +1,209 @@
+{
+  "info": {
+    "name": "URL Shortener API - Azentrix Task 1",
+    "_postman_id": "azentrix-url-shortener-v1",
+    "description": "Complete Postman collection for the URL Shortener REST API built with Spring Boot.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "shortCode",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Shorten URL (random code)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.test('Has shortCode', () => pm.expect(json.shortCode).to.be.a('string'));",
+              "pm.collectionVariables.set('shortCode', json.shortCode);",
+              "console.log('Saved shortCode:', json.shortCode);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/shorten",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://www.example.com/some/very/long/url/that/needs/shortening\"\n}"
+        }
+      }
+    },
+    {
+      "name": "2. Shorten URL (custom alias)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.test('Short code is custom alias', () => pm.expect(json.shortCode).to.eql('myalias'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/shorten",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://www.openai.com\",\n  \"customAlias\": \"myalias\"\n}"
+        }
+      }
+    },
+    {
+      "name": "3. Redirect (follow redirect OFF to see 302)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 302 or 200 (if redirect followed)', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 302]);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/{{shortCode}}"
+      }
+    },
+    {
+      "name": "4. Get Stats for Short URL",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Has clickCount', () => pm.expect(json.clickCount).to.be.a('number'));",
+              "pm.test('Has createdAt', () => pm.expect(json.createdAt).to.exist);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/urls/{{shortCode}}/stats"
+      }
+    },
+    {
+      "name": "5. List All URLs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/urls"
+      }
+    },
+    {
+      "name": "6. 404 for Unknown Code",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+              "const json = pm.response.json();",
+              "pm.test('Error is Not Found', () => pm.expect(json.error).to.eql('Not Found'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/zzz-does-not-exist"
+      }
+    },
+    {
+      "name": "7. 409 for Duplicate Alias",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/shorten",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://www.bing.com\",\n  \"customAlias\": \"myalias\"\n}"
+        }
+      }
+    },
+    {
+      "name": "8. Delete Short URL",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/urls/myalias"
+      }
+    },
+    {
+      "name": "9. 400 for Invalid URL",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/shorten",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"not-a-url\"\n}"
+        }
+      }
+    }
+  ]
+}
